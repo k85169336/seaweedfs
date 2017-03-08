@@ -11,39 +11,17 @@ import (
 	"github.com/disintegration/imaging"
 )
 
-func Resized(ext string, data []byte, width, height int) (resized []byte, w int, h int) {
+func Resized(ext string, data []byte, width, height, fill int) (resized []byte, w int, h int) {
 	if width == 0 && height == 0 {
 		return data, 0, 0
 	}
 	srcImage, _, err := image.Decode(bytes.NewReader(data))
-
-	dx := srcImage.Bounds().Dx()
-	dy := srcImage.Bounds().Dy()
-
-	if height == 0 {
-		height = width * dy / dx
-	} else if width == 0 {
-		width = height * dx / dy
-	} else {
-		if width/height > dx/dy { //定高
-			width = height * dx / dy
-		} else if width/height < dx/dy { //定宽
-			height = width * dy / dx
-		}
-	}
-
+	var dstImage *image.NRGBA
 	if err == nil {
-		bounds := srcImage.Bounds()
-		var dstImage *image.NRGBA
-		if bounds.Dx() > width && width != 0 || bounds.Dy() > height && height != 0 {
-			if width == height && bounds.Dx() != bounds.Dy() {
-				dstImage = imaging.Thumbnail(srcImage, width, height, imaging.Lanczos)
-				w, h = width, height
-			} else {
-				dstImage = imaging.Resize(srcImage, width, height, imaging.Lanczos)
-			}
+		if (width*height != 0) && fill == 1 {
+			dstImage = imaging.Thumbnail(srcImage, width, height, imaging.Lanczos)
 		} else {
-			return data, bounds.Dx(), bounds.Dy()
+			dstImage = imaging.Resize(srcImage, width, height, imaging.Lanczos)
 		}
 		var buf bytes.Buffer
 		switch ext {

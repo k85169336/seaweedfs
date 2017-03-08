@@ -151,7 +151,7 @@ func (vs *VolumeServer) GetOrHeadHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	if ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".gif" {
-		width, height, rotate := 0, 0, 0
+		width, height, rotate, fill := 0, 0, 0, 0
 		if r.FormValue("w") != "" {
 			width, _ = strconv.Atoi(r.FormValue("w"))
 		}
@@ -161,14 +161,17 @@ func (vs *VolumeServer) GetOrHeadHandler(w http.ResponseWriter, r *http.Request)
 		if r.FormValue("r") != "" {
 			rotate, _ = strconv.Atoi(r.FormValue("r"))
 		}
+		if r.FormValue("f") != "" {
+			fill, _ = strconv.Atoi(r.FormValue("f"))
+		}
 
 		//缓存
-		if r.Header.Get("exist") != "1" && (r.FormValue("w") != "" || r.FormValue("h") != "" || r.FormValue("r") != "") {
-			glog.V(0).Infoln("生成")
-			n.Data, _, _ = images.Resized(ext, n.Data, width, height)
+		if r.Header.Get("exist") != "1" && (r.FormValue("w") != "" || r.FormValue("h") != "" || r.FormValue("r") != "" || r.FormValue("f") != "") {
+			//glog.V(0).Infoln("生成")
+			n.Data, _, _ = images.Resized(ext, n.Data, width, height, fill)
 			n.Data = images.Rotate(ext, n.Data, rotate)
 
-			reqUrl := r.Header.Get("path") + "?w=" + r.FormValue("w") + "&h=" + r.FormValue("h") + "&r=" + r.FormValue("r")
+			reqUrl := r.Header.Get("path") + "?w=" + r.FormValue("w") + "&h=" + r.FormValue("h") + "&r=" + r.FormValue("r") + "&f=" + r.FormValue("f")
 			jwt := security.GetJwt(r)
 			_, err = operation.Upload("http://"+r.Host+reqUrl, filename, bytes.NewReader(n.Data), false, "image/jpeg", nil, jwt)
 			if err != nil {
