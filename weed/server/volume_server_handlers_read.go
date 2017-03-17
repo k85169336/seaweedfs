@@ -184,11 +184,20 @@ func (vs *VolumeServer) GetOrHeadHandler(w http.ResponseWriter, r *http.Request)
 		md5Ctx := md5.New()
 		md5Ctx.Write(n.Data)
 		cipherStr := md5Ctx.Sum(nil)
-		glog.V(0).Infoln("md5", hex.EncodeToString(cipherStr))
+		// glog.V(0).Infoln("md5", hex.EncodeToString(cipherStr))
 
 		fileInfo := map[string]interface{}{
 			"url": r.Header.Get("path"),
 			"md5": hex.EncodeToString(cipherStr),
+		}
+		fmt.Fprintf(w, "%v", (&JsonEncode{fileInfo, "success", 200}).ReturnJson())
+		return
+	}
+
+	if r.FormValue("size") != "" {
+		// glog.V(0).Infoln("size", len(n.Data))
+		fileInfo := map[string]interface{}{
+			"size": len(n.Data),
 		}
 		fmt.Fprintf(w, "%v", (&JsonEncode{fileInfo, "success", 200}).ReturnJson())
 		return
