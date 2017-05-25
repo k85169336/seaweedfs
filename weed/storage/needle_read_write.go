@@ -178,7 +178,6 @@ func (n *Needle) ReadData(r *os.File, offset int64, size uint32, version Version
 	newChecksum := NewCRC(n.Data)
 	if checksum != newChecksum.Value() {
 		return errors.New("CRC error! Data On Disk Corrupted")
-		return nil
 	}
 	n.Checksum = newChecksum
 	return nil
