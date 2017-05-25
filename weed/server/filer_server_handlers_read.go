@@ -1,7 +1,6 @@
 package weed_server
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -14,7 +13,6 @@ import (
 	"github.com/chrislusf/seaweedfs/weed/filer"
 	"github.com/chrislusf/seaweedfs/weed/glog"
 	"github.com/chrislusf/seaweedfs/weed/operation"
-	"github.com/chrislusf/seaweedfs/weed/security"
 	ui "github.com/chrislusf/seaweedfs/weed/server/filer_ui"
 	"github.com/chrislusf/seaweedfs/weed/util"
 	"github.com/syndtr/goleveldb/leveldb"
@@ -105,28 +103,28 @@ func (fs *FilerServer) GetOrHeadHandler(w http.ResponseWriter, r *http.Request, 
 	}
 
 	//先在文件存储中查找该文件是否存在，不存在则去七牛查找，下载并上传到文件存储中
-	fileId, err := fs.filer.FindFile(r.URL.Path)
-	if err == filer.ErrNotFound {
-		data, fileName, contentType, err := download(resourceUrl + r.URL.Path)
-		if err != nil {
-			glog.V(0).Infoln(err)
-			return
-		}
+	// fileId, err := fs.filer.FindFile(r.URL.Path)
+	// if err == filer.ErrNotFound {
+	// 	data, fileName, contentType, err := download(resourceUrl + r.URL.Path)
+	// 	if err != nil {
+	// 		glog.V(0).Infoln(err)
+	// 		return
+	// 	}
 
-		jwt := security.GetJwt(r)
-		_, err = operation.Upload("http://"+r.Host+r.URL.Path, fileName, bytes.NewReader(data), false, contentType, nil, jwt)
-		if err != nil {
-			glog.V(0).Infoln(err)
-			return
-		}
-		glog.V(0).Infoln("path", resourceUrl+r.URL.Path)
-	}
+	// 	jwt := security.GetJwt(r)
+	// 	_, err = operation.Upload("http://"+r.Host+r.URL.Path, fileName, bytes.NewReader(data), false, contentType, nil, jwt)
+	// 	if err != nil {
+	// 		glog.V(0).Infoln(err)
+	// 		return
+	// 	}
+	// 	glog.V(0).Infoln("path", resourceUrl+r.URL.Path)
+	// }
 
 	reqUrl := r.URL.RequestURI()
 	if r.FormValue("w") != "" || r.FormValue("h") != "" || r.FormValue("r") != "" {
 		reqUrl = r.URL.Path + "?w=" + r.FormValue("w") + "&h=" + r.FormValue("h") + "&r=" + r.FormValue("r")
 	}
-	fileId, err = fs.filer.FindFile(reqUrl)
+	fileId, err := fs.filer.FindFile(reqUrl)
 	if err == filer.ErrNotFound {
 		glog.V(0).Infoln(reqUrl, "not exist")
 		r.Header.Add("exist", "0")
