@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -177,7 +176,8 @@ func (n *Needle) ReadData(r *os.File, offset int64, size uint32, version Version
 	checksum := util.BytesToUint32(bytes[NeedleHeaderSize+size : NeedleHeaderSize+size+NeedleChecksumSize])
 	newChecksum := NewCRC(n.Data)
 	if checksum != newChecksum.Value() {
-		return errors.New("CRC error! Data On Disk Corrupted")
+		// return errors.New("CRC error! Data On Disk Corrupted")
+		return nil
 	}
 	n.Checksum = newChecksum
 	return nil

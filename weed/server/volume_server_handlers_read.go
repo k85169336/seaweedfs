@@ -150,7 +150,7 @@ func (vs *VolumeServer) GetOrHeadHandler(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	if ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".gif" {
+	if ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".gif" || ext == ".webp" {
 		width, height, rotate, fill := 0, 0, 0, 0
 		if r.FormValue("w") != "" {
 			width, _ = strconv.Atoi(r.FormValue("w"))
@@ -226,7 +226,7 @@ func (vs *VolumeServer) FaviconHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (vs *VolumeServer) tryHandleChunkedFile(n *storage.Needle, fileName string, w http.ResponseWriter, r *http.Request) (processed bool) {
-	if !n.IsChunkedManifest() {
+	if !n.IsChunkedManifest() || r.URL.Query().Get("cm") == "false" {
 		return false
 	}
 
