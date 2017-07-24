@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"image"
 	"io"
 	"mime"
 	"mime/multipart"
@@ -196,8 +197,16 @@ func (vs *VolumeServer) GetOrHeadHandler(w http.ResponseWriter, r *http.Request)
 
 	if r.FormValue("size") != "" {
 		// glog.V(0).Infoln("size", len(n.Data))
+		srcImage, _, err := image.Decode(bytes.NewReader(n.Data))
+		dx, dy := 0, 0
+		if err == nil {
+			dx = srcImage.Bounds().Dx()
+			dy = srcImage.Bounds().Dy()
+		}
 		fileInfo := map[string]interface{}{
-			"size": len(n.Data),
+			"size":   len(n.Data),
+			"width":  dx,
+			"height": dy,
 		}
 		fmt.Fprintf(w, "%v", (&JsonEncode{fileInfo, "success", 200}).ReturnJson())
 		return
