@@ -11,26 +11,30 @@ import (
 	"github.com/disintegration/imaging"
 )
 
-func Resized(ext string, data []byte, width, height, fill int) (resized []byte, w int, h int) {
+func Resized(ext string, data []byte, width, height int, mode string) (resized []byte, w int, h int) {
 	if width == 0 && height == 0 {
 		return data, 0, 0
 	}
 	srcImage, _, err := image.Decode(bytes.NewReader(data))
 	if err == nil {
-		dx := srcImage.Bounds().Dx()
-		dy := srcImage.Bounds().Dy()
+		bounds := srcImage.Bounds()
 		var dstImage *image.NRGBA
-		if (width*height != 0) && fill == 1 {
-			dstImage = imaging.Thumbnail(srcImage, width, height, imaging.Lanczos)
-		} else if (width*height != 0) && fill == 2 {
-			if width/height > dx/dy { //定高
-				width = 0
-			} else { //定宽
-				height = 0
+		if bounds.Dx() > width && width != 0 || bounds.Dy() > height && height != 0 {
+			switch mode {
+			case "fit":
+				dstImage = imaging.Fit(srcImage, width, height, imaging.Lanczos)
+			case "fill":
+				dstImage = imaging.Fill(srcImage, width, height, imaging.Center, imaging.Lanczos)
+			default:
+				if width == height && bounds.Dx() != bounds.Dy() {
+					dstImage = imaging.Thumbnail(srcImage, width, height, imaging.Lanczos)
+					w, h = width, height
+				} else {
+					dstImage = imaging.Resize(srcImage, width, height, imaging.Lanczos)
+				}
 			}
-			dstImage = imaging.Resize(srcImage, width, height, imaging.Lanczos)
 		} else {
-			dstImage = imaging.Resize(srcImage, width, height, imaging.Lanczos)
+			return data, bounds.Dx(), bounds.Dy()
 		}
 		var buf bytes.Buffer
 		switch ext {

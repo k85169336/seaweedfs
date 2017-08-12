@@ -18,9 +18,6 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
-//七牛资源域名
-var resourceUrl string = "http://resource.k12cloud.cn"
-
 // listDirectoryHandler lists directories and folers under a directory
 // files are sorted by name and paginated via "lastFileName" and "limit".
 // sub directories are listed on the first page, when "lastFileName"
@@ -102,27 +99,22 @@ func (fs *FilerServer) GetOrHeadHandler(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 
-	//先在文件存储中查找该文件是否存在，不存在则去七牛查找，下载并上传到文件存储中
-	// fileId, err := fs.filer.FindFile(r.URL.Path)
-	// if err == filer.ErrNotFound {
-	// 	data, fileName, contentType, err := download(resourceUrl + r.URL.Path)
-	// 	if err != nil {
-	// 		glog.V(0).Infoln(err)
-	// 		return
-	// 	}
-
-	// 	jwt := security.GetJwt(r)
-	// 	_, err = operation.Upload("http://"+r.Host+r.URL.Path, fileName, bytes.NewReader(data), false, contentType, nil, jwt)
-	// 	if err != nil {
-	// 		glog.V(0).Infoln(err)
-	// 		return
-	// 	}
-	// 	glog.V(0).Infoln("path", resourceUrl+r.URL.Path)
-	// }
-
-	reqUrl := r.URL.RequestURI()
-	if r.FormValue("w") != "" || r.FormValue("h") != "" || r.FormValue("r") != "" {
-		reqUrl = r.URL.Path + "?w=" + r.FormValue("w") + "&h=" + r.FormValue("h") + "&r=" + r.FormValue("r")
+	reqUrl := r.URL.Path
+	var reqQuery string
+	if r.FormValue("w") != "" {
+		reqQuery += "&w=" + r.FormValue("w")
+	}
+	if r.FormValue("h") != "" {
+		reqQuery += "&h=" + r.FormValue("h")
+	}
+	if r.FormValue("r") != "" {
+		reqQuery += "&r=" + r.FormValue("r")
+	}
+	if r.FormValue("w") != "" && r.FormValue("h") != "" && r.FormValue("f") != "" {
+		reqQuery += "&f=" + r.FormValue("f")
+	}
+	if reqQuery = strings.TrimLeft(reqQuery, "&"); reqQuery != "" {
+		reqUrl += "?" + reqQuery
 	}
 	fileId, err := fs.filer.FindFile(reqUrl)
 	if err == filer.ErrNotFound {
@@ -131,7 +123,7 @@ func (fs *FilerServer) GetOrHeadHandler(w http.ResponseWriter, r *http.Request, 
 		r.Header.Add("path", r.URL.Path)
 		fileId, err = fs.filer.FindFile(r.URL.Path)
 		if err == filer.ErrNotFound {
-			glog.V(3).Infoln("Not found in db", r.URL.Path)
+			glog.V(0).Infoln(r.URL.Path, "not exist")
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
