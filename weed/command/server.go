@@ -68,7 +68,7 @@ var (
 	volumeDataFolders             = cmdServer.Flag.String("dir", os.TempDir(), "directories to store data files. dir[,dir]...")
 	volumeMaxDataVolumeCounts     = cmdServer.Flag.String("volume.max", "7", "maximum numbers of volumes, count[,count]...")
 	volumePulse                   = cmdServer.Flag.Int("pulseSeconds", 5, "number of seconds between heartbeats")
-	volumeIndexType               = cmdServer.Flag.String("volume.index", "memory", "Choose [memory|leveldb|boltdb] mode for memory~performance balance.")
+	volumeIndexType               = cmdServer.Flag.String("volume.index", "memory", "Choose [memory|leveldb|boltdb|btree] mode for memory~performance balance.")
 	volumeFixJpgOrientation       = cmdServer.Flag.Bool("volume.images.fix.orientation", true, "Adjust jpg orientation when uploading.")
 	volumeReadRedirect            = cmdServer.Flag.Bool("volume.read.redirect", true, "Redirect moved or non-local volumes.")
 	volumeServerPublicUrl         = cmdServer.Flag.String("volume.publicUrl", "", "publicly accessible address")
@@ -83,6 +83,7 @@ func init() {
 	filerOptions.master = cmdServer.Flag.String("filer.master", "", "default to current master server")
 	filerOptions.collection = cmdServer.Flag.String("filer.collection", "", "all data will be stored in this collection")
 	filerOptions.port = cmdServer.Flag.Int("filer.port", 8888, "filer server http listen port")
+	filerOptions.publicPort = cmdServer.Flag.Int("filer.port.public", 0, "filer server public http listen port")
 	filerOptions.dir = cmdServer.Flag.String("filer.dir", "", "directory to store meta data, default to a 'filer' sub directory of what -dir is specified")
 	filerOptions.defaultReplicaPlacement = cmdServer.Flag.String("filer.defaultReplicaPlacement", "", "Default replication type if not specified during runtime.")
 	filerOptions.redirectOnRead = cmdServer.Flag.Bool("filer.redirectOnRead", false, "whether proxy or redirect to volume server during file GET request")
@@ -112,6 +113,7 @@ func runServer(cmd *Command, args []string) bool {
 	}
 
 	*filerOptions.master = *serverIp + ":" + strconv.Itoa(*masterPort)
+	filerOptions.ip = serverIp
 
 	if *filerOptions.defaultReplicaPlacement == "" {
 		*filerOptions.defaultReplicaPlacement = *masterDefaultReplicaPlacement
@@ -145,6 +147,10 @@ func runServer(cmd *Command, args []string) bool {
 		}
 	}
 
+	if *masterVolumeSizeLimitMB > 30*1000 {
+		glog.Fatalf("masterVolumeSizeLimitMB should be less than 30000")
+	}
+
 	if *masterMetaFolder == "" {
 		*masterMetaFolder = folders[0]
 	}
@@ -168,30 +174,9 @@ func runServer(cmd *Command, args []string) bool {
 	if *isStartingFiler {
 		go func() {
 			time.Sleep(1 * time.Second)
-			r := http.NewServeMux()
-			_, nfs_err := weed_server.NewFilerServer(r, *serverBindIp, *filerOptions.port, *filerOptions.master, *filerOptions.dir, *filerOptions.collection,
-				*filerOptions.defaultReplicaPlacement,
-				*filerOptions.redirectOnRead, *filerOptions.disableDirListing,
-				*filerOptions.confFile,
-				*filerOptions.maxMB,
-				*filerOptions.secretKey,
-				*filerOptions.cassandra_server, *filerOptions.cassandra_keyspace,
-				*filerOptions.redis_server, *filerOptions.redis_password, *filerOptions.redis_database,
-			)
-			if nfs_err != nil {
-				glog.Fatalf("Filer startup error: %v", nfs_err)
-			}
-			glog.V(0).Infoln("Start Seaweed Filer", util.VERSION, "at port", strconv.Itoa(*filerOptions.port))
-			filerListener, e := util.NewListener(
-				":"+strconv.Itoa(*filerOptions.port),
-				time.Duration(10)*time.Second,
-			)
-			if e != nil {
-				glog.Fatalf("Filer listener error: %v", e)
-			}
-			if e := http.Serve(filerListener, r); e != nil {
-				glog.Fatalf("Filer Fail to serve: %v", e)
-			}
+
+			filerOptions.start()
+
 		}()
 	}
 
@@ -272,6 +257,8 @@ func runServer(cmd *Command, args []string) bool {
 		volumeNeedleMapKind = storage.NeedleMapLevelDb
 	case "boltdb":
 		volumeNeedleMapKind = storage.NeedleMapBoltDb
+	case "btree":
+		volumeNeedleMapKind = storage.NeedleMapBtree
 	}
 	volumeServer := weed_server.NewVolumeServer(volumeMux, publicVolumeMux,
 		*serverIp, *volumePort, *volumeServerPublicUrl,
@@ -279,7 +266,6 @@ func runServer(cmd *Command, args []string) bool {
 		volumeNeedleMapKind,
 		*serverIp+":"+strconv.Itoa(*masterPort), *volumePulse, *serverDataCenter, *serverRack,
 		serverWhiteList, *volumeFixJpgOrientation, *volumeReadRedirect,
-		*volumeEnableBytesCache,
 	)
 
 	glog.V(0).Infoln("Start Seaweed volume server", util.VERSION, "at", *serverIp+":"+strconv.Itoa(*volumePort))
@@ -304,7 +290,7 @@ func runServer(cmd *Command, args []string) bool {
 		}()
 	}
 
-	OnInterrupt(func() {
+	util.OnInterrupt(func() {
 		volumeServer.Shutdown()
 		pprof.StopCPUProfile()
 	})

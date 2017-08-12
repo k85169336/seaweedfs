@@ -86,7 +86,6 @@ func (vs *VolumeServer) GetOrHeadHandler(w http.ResponseWriter, r *http.Request)
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-	defer n.ReleaseMemory()
 	if n.Cookie != cookie {
 		glog.V(0).Infoln("request", r.URL.Path, "with unmaching cookie seen:", cookie, "expected:", n.Cookie, "from", r.RemoteAddr, "agent", r.UserAgent())
 		w.WriteHeader(http.StatusNotFound)
@@ -151,7 +150,7 @@ func (vs *VolumeServer) GetOrHeadHandler(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	if ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".gif" || ext == ".webp" {
+	if ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".gif" {
 		width, height, rotate, fill := 0, 0, 0, 0
 		if r.FormValue("w") != "" {
 			width, _ = strconv.Atoi(r.FormValue("w"))
@@ -181,12 +180,11 @@ func (vs *VolumeServer) GetOrHeadHandler(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
+	//文件md5
 	if r.FormValue("md5") != "" {
 		md5Ctx := md5.New()
 		md5Ctx.Write(n.Data)
 		cipherStr := md5Ctx.Sum(nil)
-		// glog.V(0).Infoln("md5", hex.EncodeToString(cipherStr))
-
 		fileInfo := map[string]interface{}{
 			"url": r.Header.Get("path"),
 			"md5": hex.EncodeToString(cipherStr),
@@ -195,8 +193,8 @@ func (vs *VolumeServer) GetOrHeadHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	//图片尺寸
 	if r.FormValue("size") != "" {
-		// glog.V(0).Infoln("size", len(n.Data))
 		srcImage, _, err := image.Decode(bytes.NewReader(n.Data))
 		dx, dy := 0, 0
 		if err == nil {

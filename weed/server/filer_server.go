@@ -57,7 +57,7 @@ type FilerServer struct {
 	masterNodes        *storage.MasterNodes
 }
 
-func NewFilerServer(r *http.ServeMux, ip string, port int, master string, dir string, collection string,
+func NewFilerServer(defaultMux, readonlyMux *http.ServeMux, ip string, port int, master string, dir string, collection string,
 	replication string, redirectOnRead bool, disableDirListing bool,
 	confFile string,
 	maxMB int,
@@ -105,12 +105,15 @@ func NewFilerServer(r *http.ServeMux, ip string, port int, master string, dir st
 			return
 		}
 
-		r.HandleFunc("/admin/mv", fs.moveHandler)
-		r.HandleFunc("/admin/register", fs.registerHandler)
-		r.HandleFunc("/__api__", fs.apiHandler)
+		defaultMux.HandleFunc("/admin/mv", fs.moveHandler)
+		defaultMux.HandleFunc("/admin/register", fs.registerHandler)
+		defaultMux.HandleFunc("/__api__", fs.apiHandler)
 	}
 
-	r.HandleFunc("/", fs.filerHandler)
+	defaultMux.HandleFunc("/", fs.filerHandler)
+	if defaultMux != readonlyMux {
+		readonlyMux.HandleFunc("/", fs.readonlyFilerHandler)
+	}
 
 	go func() {
 		connected := true
