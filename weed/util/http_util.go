@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"path"
 	"strings"
 
 	"github.com/chrislusf/seaweedfs/weed/security"
@@ -182,4 +183,27 @@ func NormalizeUrl(url string) string {
 		return url
 	}
 	return "http://" + url
+}
+
+func Download(fileUrl string) (data []byte, fileName, contentType string, err error) {
+	resp, err := client.Get(fileUrl)
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		err = errors.New("not exist")
+		return
+	}
+	data, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return
+	}
+	contentType = resp.Header.Get("Content-type")
+	u, err := url.Parse(fileUrl)
+	if err != nil {
+		return
+	}
+	_, fileName = path.Split(u.Path)
+	return
 }

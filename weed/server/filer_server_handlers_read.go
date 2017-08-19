@@ -2,12 +2,9 @@ package weed_server
 
 import (
 	"bytes"
-	"errors"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
-	"path"
 	"strconv"
 	"strings"
 
@@ -105,7 +102,7 @@ func (fs *FilerServer) GetOrHeadHandler(w http.ResponseWriter, r *http.Request, 
 	fileId, err := fs.filer.FindFile(r.URL.Path)
 	if err == filer.ErrNotFound {
 		if fs.syncFile != "" {
-			data, fileName, contentType, err := download(fs.syncFile + r.URL.Path)
+			data, fileName, contentType, err := util.Download(fs.syncFile + r.URL.Path)
 			if err != nil {
 				glog.V(0).Infoln(r.URL.Path, err)
 				w.WriteHeader(http.StatusNotFound)
@@ -200,32 +197,4 @@ func (fs *FilerServer) GetOrHeadHandler(w http.ResponseWriter, r *http.Request, 
 	w.WriteHeader(resp.StatusCode)
 	io.Copy(w, resp.Body)
 
-}
-
-func download(u string) (data []byte, fileName, contentType string, err error) {
-	client := &http.Client{}
-	request, err := http.NewRequest("GET", u, nil)
-	if err != nil {
-		return
-	}
-	resp, err := client.Do(request)
-	if err != nil {
-		return
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		err = errors.New("not exist")
-		return
-	}
-	data, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return
-	}
-	contentType = resp.Header.Get("Content-type")
-	ur, err := url.Parse(u)
-	if err != nil {
-		return
-	}
-	_, fileName = path.Split(ur.Path)
-	return
 }
