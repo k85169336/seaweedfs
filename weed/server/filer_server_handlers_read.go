@@ -1,7 +1,8 @@
 package weed_server
 
 import (
-	"fmt"
+	"bytes"
+	"errors"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 	"github.com/chrislusf/seaweedfs/weed/filer"
 	"github.com/chrislusf/seaweedfs/weed/glog"
 	"github.com/chrislusf/seaweedfs/weed/operation"
+	"github.com/chrislusf/seaweedfs/weed/security"
 	ui "github.com/chrislusf/seaweedfs/weed/server/filer_ui"
 	"github.com/chrislusf/seaweedfs/weed/util"
 	"github.com/syndtr/goleveldb/leveldb"
@@ -99,6 +101,28 @@ func (fs *FilerServer) GetOrHeadHandler(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 
+	//本地找不到就去fs.syncFile查找
+	fileId, err := fs.filer.FindFile(r.URL.Path)
+	if err == filer.ErrNotFound {
+		if fs.syncFile != "" {
+			data, fileName, contentType, err := download(fs.syncFile + r.URL.Path)
+			if err != nil {
+				glog.V(0).Infoln(r.URL.Path, err)
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
+			jwt := security.GetJwt(r)
+			_, err = operation.Upload("http://"+r.Host+r.URL.Path, fileName, bytes.NewReader(data), false, contentType, nil, jwt)
+			if err != nil {
+				glog.V(0).Infoln("upload", err)
+				w.WriteHeader(http.StatusNotFound)
+				return
+			} else {
+				glog.V(0).Infoln("sync", fs.syncFile+r.URL.Path)
+			}
+		}
+	}
+
 	reqUrl := r.URL.Path
 	var reqQuery string
 	if r.FormValue("w") != "" {
@@ -116,7 +140,7 @@ func (fs *FilerServer) GetOrHeadHandler(w http.ResponseWriter, r *http.Request, 
 	if reqQuery = strings.TrimLeft(reqQuery, "&"); reqQuery != "" {
 		reqUrl += "?" + reqQuery
 	}
-	fileId, err := fs.filer.FindFile(reqUrl)
+	fileId, err = fs.filer.FindFile(reqUrl)
 	if err == filer.ErrNotFound {
 		glog.V(0).Infoln(reqUrl, "not exist")
 		r.Header.Add("exist", "0")
@@ -184,28 +208,24 @@ func download(u string) (data []byte, fileName, contentType string, err error) {
 	if err != nil {
 		return
 	}
-
 	resp, err := client.Do(request)
 	if err != nil {
 		return
 	}
 	defer resp.Body.Close()
-
 	if resp.StatusCode != 200 {
-		err = fmt.Errorf("%s", "下载失败")
+		err = errors.New("not exist")
+		return
 	}
 	data, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return
 	}
-
 	contentType = resp.Header.Get("Content-type")
-
 	ur, err := url.Parse(u)
 	if err != nil {
 		return
 	}
 	_, fileName = path.Split(ur.Path)
-
 	return
 }

@@ -55,6 +55,7 @@ type FilerServer struct {
 	filer              filer.Filer
 	maxMB              int
 	masterNodes        *storage.MasterNodes
+	syncFile           string
 }
 
 func NewFilerServer(defaultMux, readonlyMux *http.ServeMux, ip string, port int, master string, dir string, collection string,
@@ -63,7 +64,7 @@ func NewFilerServer(defaultMux, readonlyMux *http.ServeMux, ip string, port int,
 	maxMB int,
 	secret string,
 	cassandra_server string, cassandra_keyspace string,
-	redis_server string, redis_password string, redis_database int,
+	redis_server string, redis_password string, redis_database int, syncFile string,
 ) (fs *FilerServer, err error) {
 	fs = &FilerServer{
 		master:             master,
@@ -73,6 +74,7 @@ func NewFilerServer(defaultMux, readonlyMux *http.ServeMux, ip string, port int,
 		disableDirListing:  disableDirListing,
 		maxMB:              maxMB,
 		port:               ip + ":" + strconv.Itoa(port),
+		syncFile:           syncFile,
 	}
 
 	var setting *filerConf

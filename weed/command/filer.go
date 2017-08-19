@@ -33,6 +33,7 @@ type FilerOptions struct {
 	redis_server            *string
 	redis_password          *string
 	redis_database          *int
+	syncFile                *string
 }
 
 func init() {
@@ -107,6 +108,7 @@ func (fo *FilerOptions) start() {
 		*fo.secretKey,
 		*fo.cassandra_server, *fo.cassandra_keyspace,
 		*fo.redis_server, *fo.redis_password, *fo.redis_database,
+		*fo.syncFile,
 	)
 	if nfs_err != nil {
 		glog.Fatalf("Filer startup error: %v", nfs_err)

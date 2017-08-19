@@ -95,6 +95,7 @@ func init() {
 	filerOptions.redis_server = cmdServer.Flag.String("filer.redis.server", "", "host:port of the redis server, e.g., 127.0.0.1:6379")
 	filerOptions.redis_password = cmdServer.Flag.String("filer.redis.password", "", "redis password in clear text")
 	filerOptions.redis_database = cmdServer.Flag.Int("filer.redis.database", 0, "the database on the redis server")
+	filerOptions.syncFile = cmdServer.Flag.String("sync.file.url", "", "sync file url")
 }
 
 func runServer(cmd *Command, args []string) bool {
