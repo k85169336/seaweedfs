@@ -296,7 +296,7 @@ func writeResponseContent(filename, mimeType string, rs io.ReadSeeker, w http.Re
 	}
 	if mimeType != "" {
 		if ext := path.Ext(filename); ext == ".apk" { //处理.apk
-			mimeType = "application/octet-stream"
+			mimeType = "application/vnd.android.package-archive"
 		}
 		w.Header().Set("Content-Type", mimeType)
 	}
@@ -307,7 +307,6 @@ func writeResponseContent(filename, mimeType string, rs io.ReadSeeker, w http.Re
 				contentDisposition = "attachment"
 			}
 		}
-		glog.V(0).Infoln("contentDisposition:", contentDisposition)
 		w.Header().Set("Content-Disposition", contentDisposition+`; filename="`+fileNameEscaper.Replace(filename)+`"`)
 	}
 	w.Header().Set("Accept-Ranges", "bytes")
