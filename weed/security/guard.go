@@ -127,8 +127,8 @@ func (g *Guard) checkWhiteList(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	glog.V(0).Infof("Not in whitelist: %s", r.RemoteAddr)
-	return fmt.Errorf("Not in whitelis: %s", r.RemoteAddr)
+	glog.V(0).Infof("Not in whitelist: %s", host)
+	return fmt.Errorf("Not in whitelis: %s", host)
 }
 
 func (g *Guard) checkJwt(w http.ResponseWriter, r *http.Request) error {
