@@ -85,15 +85,14 @@ func GetActualRemoteHost(r *http.Request) (host string, err error) {
 	host = r.Header.Get("HTTP_X_FORWARDED_FOR")
 	if host == "" {
 		host = r.Header.Get("X-FORWARDED-FOR")
-		glog.V(0).Infof("X-FORWARDED-FOR: %s", host)
-	} else {
-		glog.V(0).Infof("HTTP_X_FORWARDED_FOR: %s", host)
 	}
 	if strings.Contains(host, ",") {
 		host = host[0:strings.Index(host, ",")]
 	}
 	if host == "" {
 		host, _, err = net.SplitHostPort(r.RemoteAddr)
+	} else {
+		host, _, err = net.SplitHostPort(host)
 	}
 	return
 }
