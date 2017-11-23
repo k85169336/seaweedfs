@@ -6,13 +6,50 @@
 
 ![SeaweedFS Logo](https://raw.githubusercontent.com/chrislusf/seaweedfs/master/note/seaweedfs.png)
 
+<h2 align="center">Supporting SeaweedFS</h2>
+
+SeaweedFS is Apache-licensed open source project, independent project with its ongoing development made 
+possible entirely thanks to the support by these awesome [backers](https://github.com/chrislusf/seaweedfs/blob/master/backers.md). 
+If you'd like to grow SeaweedFS even stronger, please consider to 
+<a href="https://www.patreon.com/seaweedfs">Sponsor SeaweedFS via Patreon</a>.
+
+Platinum ($2500/month), Gold ($500/month): put your company logo on the SeaweedFS github page
+Generous Backer($50/month), Backer($10/month): put your name on the SeaweedFS backer page.
+
+Your support will be really appreciated by me and other supporters!
+
+<h3 align="center"><a href="https://www.patreon.com/seaweedfs">Sponsors SeaweedFS via Patreon</a></h3>
+
+<h4 align="center">Platinum</h4>
+
+<p align="center">
+  <a href="" target="_blank">
+    Add your name or icon here
+  </a>
+</p>
+
+<h4 align="center">Gold</h4>
+
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="middle">
+        <a href="" target="_blank">
+          Add your name or icon here
+        </a>
+      </td>
+    </tr>
+    <tr></tr>
+  </tbody>
+</table>
+
+---
+
 
 - [Download Binaries for different platforms](https://github.com/chrislusf/seaweedfs/releases/latest)
 - [SeaweedFS Mailing List](https://groups.google.com/d/forum/seaweedfs)
 - [Wiki Documentation](https://github.com/chrislusf/seaweedfs/wiki)
 
-
-[![](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=EEECLJ8QGTTPC)
 
 ## Introduction
 
@@ -21,7 +58,7 @@ SeaweedFS is a simple and highly scalable distributed file system. There are two
 1. to store billions of files!
 2. to serve the files fast!
 
-Instead of supporting full POSIX file system semantics, SeaweedFS choose to implement only a key->file mapping. Similar to "NoSQL", you might call it "NoFS".
+Instead of supporting full POSIX file system semantics, SeaweedFS chooses to implement only a key->file mapping. Similar to "NoSQL", you might call it "NoFS".
 
 Instead of managing all file metadata in a central master, the central master only manages file volumes, and it lets these volume servers manage files and their metadata. This relieves concurrency pressure from the central master and spreads file metadata into volume servers, allowing faster file access (just one disk read operation).
 
@@ -44,7 +81,7 @@ SeaweedFS started by implementing [Facebook's Haystack design paper](http://www.
 [Filer]: https://github.com/chrislusf/seaweedfs/wiki/Filer
 
 ## Example Usage
-By default, the master node runs on port 9333, and the volume nodes runs on port 8080.
+By default, the master node runs on port 9333, and the volume nodes run on port 8080.
 Here I will start one master node, and two volume nodes on port 8080 and 8081. Ideally, they should be started from different machines. I just use localhost as an example.
 
 SeaweedFS uses HTTP REST operations to write, read, delete. The responses are in JSON or JSONP format.
@@ -104,14 +141,14 @@ If space is really a concern, you can store the file id in your own format. You 
 
 Here is an example of how to render the URL.
 
-First lookup the volume server's URLs by the file's volumeId:
+First look up the volume server's URLs by the file's volumeId:
 
 ```
 > curl http://localhost:9333/dir/lookup?volumeId=3
 {"locations":[{"publicUrl":"localhost:8080","url":"localhost:8080"}]}
 ```
 
-Since (usually) there are not too many volume servers, and volumes don't move often, you can cache the results most of the time. Depends on the replication type, one volume can have multiple replica locations. Just randomly pick one location to read.)
+Since (usually) there are not too many volume servers, and volumes don't move often, you can cache the results most of the time. Depending on the replication type, one volume can have multiple replica locations. Just randomly pick one location to read.
 
 Now you can take the public url, render the url or directly read from the volume server via url:
 
@@ -131,7 +168,7 @@ If you want a nicer URL, you can use one of these alternative URL formats:
  http://localhost:8080/3,01637037d6
 ```
 
-If you want get a scaled version of an image, you can add some params:
+If you want to get a scaled version of an image, you can add some params:
 
 ```
 http://localhost:8080/3/01637037d6.jpg?height=200&width=200
@@ -241,7 +278,7 @@ Ceph can be setup similar to SeaweedFS as a key->blob store. It is much more com
 
 SeaweedFS is meant to be fast and simple, both during usage and during setup. If you do not understand how it works when you reach here, we failed! Please raise an issue with any questions or update this file with clarifications.
 
-SeaweedFS has a centralized master to lookup free volumes, while Ceph uses hashing to locate its objects. Having a centralized master makes it easy to code and manage. HDFS/GFS has the single name node for years. SeaweedFS now support multiple master nodes.
+SeaweedFS has a centralized master to look up free volumes, while Ceph uses hashing to locate its objects. Having a centralized master makes it easy to code and manage. HDFS/GFS has the single name node for years. SeaweedFS now support multiple master nodes.
 
 Ceph hashing avoids SPOF, but makes it complicated when moving or adding servers.
 
@@ -308,7 +345,7 @@ step 4: after you modify your code locally, you could start a local build by cal
 
 ### Hard Drive Performance ###
 
-When testing read performance on SeaweedFS, it basically becomes performance test your hard drive's random read speed. Hard Drive usually get 100MB/s~200MB/s.
+When testing read performance on SeaweedFS, it basically becomes performance test for your hard drive's random read speed. Hard Drive usually get 100MB/s~200MB/s.
 
 ### Solid State Disk
 
