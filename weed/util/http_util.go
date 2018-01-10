@@ -212,22 +212,6 @@ func Download(fileUrl string) (data []byte, fileName, contentType string, err er
 	return
 }
 
-//生成32位md5字串
-func GetMd5String(s string) string {
-	h := md5.New()
-	h.Write([]byte(s))
-	return hex.EncodeToString(h.Sum(nil))
-}
-
-//生成Guid字串
-func UniqueId() string {
-	b := make([]byte, 48)
-	if _, err := io.ReadFull(rand.Reader, b); err != nil {
-		return ""
-	}
-	return GetMd5String(base64.URLEncoding.EncodeToString(b))
-}
-
 func NewDownload(fileUrl string) (tmpFile, fileName, contentType string, err error) {
 	u, err := url.Parse(fileUrl)
 	if err != nil {
@@ -250,4 +234,20 @@ func NewDownload(fileUrl string) (tmpFile, fileName, contentType string, err err
 	}
 	io.Copy(f, resp.Body)
 	return
+}
+
+//生成32位md5字串
+func GetMd5String(s string) string {
+	h := md5.New()
+	h.Write([]byte(s))
+	return hex.EncodeToString(h.Sum(nil))
+}
+
+//生成Guid字串
+func UniqueId() string {
+	b := make([]byte, 48)
+	if _, err := io.ReadFull(rand.Reader, b); err != nil {
+		return ""
+	}
+	return GetMd5String(base64.URLEncoding.EncodeToString(b))
 }
