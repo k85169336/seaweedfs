@@ -3,8 +3,10 @@ package weed_server
 import (
 	"bytes"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 
@@ -102,14 +104,17 @@ func (fs *FilerServer) GetOrHeadHandler(w http.ResponseWriter, r *http.Request, 
 	fileId, err := fs.filer.FindFile(r.URL.Path)
 	if err == filer.ErrNotFound {
 		if fs.syncFile != "" {
-			data, fileName, contentType, err := util.Download(fs.syncFile + r.URL.Path)
+			// data, fileName, contentType, err := util.Download(fs.syncFile + r.URL.Path)
+			tmpFile, fileName, contentType, err := util.NewDownload(fs.syncFile + r.URL.Path)
+			f, err := ioutil.ReadFile(tmpFile)
 			if err != nil {
 				glog.V(0).Infoln(r.URL.Path, err)
 				w.WriteHeader(http.StatusNotFound)
 				return
 			}
 			jwt := security.GetJwt(r)
-			_, err = operation.Upload("http://"+r.Host+r.URL.Path, fileName, bytes.NewReader(data), false, contentType, nil, jwt)
+			// _, err = operation.Upload("http://"+r.Host+r.URL.Path, fileName, bytes.NewReader(data), false, contentType, nil, jwt)
+			_, err = operation.Upload("http://"+r.Host+r.URL.Path, fileName, bytes.NewReader(f), false, contentType, nil, jwt)
 			if err != nil {
 				glog.V(0).Infoln("upload", err)
 				w.WriteHeader(http.StatusNotFound)
@@ -117,6 +122,7 @@ func (fs *FilerServer) GetOrHeadHandler(w http.ResponseWriter, r *http.Request, 
 			} else {
 				glog.V(0).Infoln("sync", fs.syncFile+r.URL.Path)
 			}
+			os.Remove(tmpFile)
 		}
 	}
 
