@@ -109,12 +109,14 @@ func (fs *FilerServer) GetOrHeadHandler(w http.ResponseWriter, r *http.Request, 
 			if err != nil {
 				glog.V(0).Infoln(r.URL.Path, err)
 				w.WriteHeader(http.StatusNotFound)
+				os.Remove(tmpFile)
 				return
 			}
 			data, err := ioutil.ReadFile(tmpFile)
 			if err != nil {
 				glog.V(0).Infoln(r.URL.Path, err)
 				w.WriteHeader(http.StatusNotFound)
+				os.Remove(tmpFile)
 				return
 			}
 			jwt := security.GetJwt(r)
@@ -123,11 +125,12 @@ func (fs *FilerServer) GetOrHeadHandler(w http.ResponseWriter, r *http.Request, 
 			if err != nil {
 				glog.V(0).Infoln("upload", err)
 				w.WriteHeader(http.StatusNotFound)
+				os.Remove(tmpFile)
 				return
 			} else {
 				glog.V(0).Infoln("sync", fs.syncFile+r.URL.Path)
+				os.Remove(tmpFile)
 			}
-			os.Remove(tmpFile)
 		}
 	}
 

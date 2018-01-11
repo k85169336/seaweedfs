@@ -91,8 +91,6 @@ func GetActualRemoteHost(r *http.Request) (host string, err error) {
 	}
 	if host == "" {
 		host, _, err = net.SplitHostPort(r.RemoteAddr)
-	} else {
-		host, _, err = net.SplitHostPort(host)
 	}
 	return
 }
@@ -103,6 +101,10 @@ func (g *Guard) checkWhiteList(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	host, err := GetActualRemoteHost(r)
+	if strings.Contains(host, ":") {
+		host, _, err = net.SplitHostPort(host)
+		panic(err)
+	}
 	if err == nil {
 		for _, ip := range g.whiteList {
 
