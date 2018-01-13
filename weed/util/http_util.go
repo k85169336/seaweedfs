@@ -12,10 +12,12 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"path/filepath"
 	"net/url"
 	"os"
 	"path"
 	"strings"
+	"os/exec"
 
 	"github.com/chrislusf/seaweedfs/weed/security"
 )
@@ -189,30 +191,19 @@ func NormalizeUrl(url string) string {
 	return "http://" + url
 }
 
-func Download(fileUrl string) (data []byte, fileName, contentType string, err error) {
-	resp, err := client.Get(fileUrl)
-	if err != nil {
-		return
+//生成Guid字串
+func UniqueId() string {
+	b := make([]byte, 48)
+	if _, err := io.ReadFull(rand.Reader, b); err != nil {
+		return ""
 	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		err = errors.New("not exist")
-		return
-	}
-	data, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return
-	}
-	contentType = resp.Header.Get("Content-type")
-	u, err := url.Parse(fileUrl)
-	if err != nil {
-		return
-	}
-	_, fileName = path.Split(u.Path)
-	return
+	h := md5.New()
+	h.Write([]byte(base64.URLEncoding.EncodeToString(b)))
+	return hex.EncodeToString(h.Sum(nil))
 }
 
-func NewDownload(fileUrl string) (tmpFile, fileName, contentType string, err error) {
+//同步文件下载
+func SyncDownload(fileUrl string) (tmpFile, fileName, contentType string, err error) {
 	u, err := url.Parse(fileUrl)
 	if err != nil {
 		return
@@ -227,7 +218,7 @@ func NewDownload(fileUrl string) (tmpFile, fileName, contentType string, err err
 		return
 	}
 	contentType = resp.Header.Get("Content-type")
-	tmpFile = UniqueId()
+	tmpFile = UniqueId()+ strings.ToLower(filepath.Ext(fileName))
 	f, err := os.Create(tmpFile)
 	if err != nil {
 		return
@@ -236,18 +227,27 @@ func NewDownload(fileUrl string) (tmpFile, fileName, contentType string, err err
 	return
 }
 
-//生成32位md5字串
-func GetMd5String(s string) string {
-	h := md5.New()
-	h.Write([]byte(s))
-	return hex.EncodeToString(h.Sum(nil))
+type CurlPostResult struct {
+	Name string `json:"name,omitempty"`
+	Fid  string `json:"fid,omitempty"`
 }
 
-//生成Guid字串
-func UniqueId() string {
-	b := make([]byte, 48)
-	if _, err := io.ReadFull(rand.Reader, b); err != nil {
-		return ""
+//curl上传
+func CurlPost(fileName, url string) (err error) {
+	cmd := exec.Command("curl", "-F", "filename=@"+fileName, url)
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	err = cmd.Run()
+	if err != nil {
+		return err
+	}else{
+		var result CurlPostResult
+		err = json.Unmarshal(out.Bytes(), &result)
+		if err != nil {
+			return err
+		}
+		return nil
+		// fmt.Println(out.String())
+		// fmt.Println(result.Fid)
 	}
-	return GetMd5String(base64.URLEncoding.EncodeToString(b))
 }
