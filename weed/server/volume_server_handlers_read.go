@@ -120,16 +120,26 @@ func (vs *VolumeServer) GetOrHeadHandler(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	if vs.tryHandleChunkedFile(n, filename, w, r) {
-		return
-	}
-
 	if n.NameSize > 0 && filename == "" {
 		filename = string(n.Name)
 		if ext == "" {
 			ext = path.Ext(filename)
 		}
 	}
+	
+	//重命名
+	if r.FormValue("rename") != "" {
+		filename = r.FormValue("rename") + ext
+	}
+
+	if HasSuffix(filename,"_manifest") {
+		filename = strings.TrimSuffix(filename, "_manifest")
+	}
+
+	if vs.tryHandleChunkedFile(n, filename, w, r) {
+		return
+	}
+
 	mtype := ""
 	if n.MimeSize > 0 {
 		mt := string(n.Mime)
@@ -229,11 +239,6 @@ func (vs *VolumeServer) GetOrHeadHandler(w http.ResponseWriter, r *http.Request)
 		}
 		fmt.Fprintf(w, "%v", (&JsonEncode{fileInfo, "success", 200}).ReturnJson())
 		return
-	}
-
-	//重命名
-	if r.FormValue("rename") != "" {
-		filename = r.FormValue("rename") + ext
 	}
 
 	if e := writeResponseContent(filename, mtype, bytes.NewReader(n.Data), w, r); e != nil {
@@ -408,4 +413,8 @@ func writeResponseContent(filename, mimeType string, rs io.ReadSeeker, w http.Re
 func (j *JsonEncode) ReturnJson() string {
 	b, _ := json.MarshalIndent(j, "", "	")
 	return string(b)
+}
+
+func HasSuffix(s, suffix string) bool {
+    return len(s) >= len(suffix) && s[len(s)-len(suffix):] == suffix
 }
