@@ -9,6 +9,10 @@ import (
 	"github.com/chrislusf/seaweedfs/weed/glog"
 	"github.com/chrislusf/seaweedfs/weed/server"
 	"github.com/chrislusf/seaweedfs/weed/util"
+	"github.com/soheilhy/cmux"
+	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc"
+	"github.com/chrislusf/seaweedfs/weed/pb/filer_pb"
 )
 
 var (
@@ -100,7 +104,7 @@ func (fo *FilerOptions) start() {
 		publicVolumeMux = http.NewServeMux()
 	}
 
-	_, nfs_err := weed_server.NewFilerServer(defaultMux, publicVolumeMux,
+	fs, nfs_err := weed_server.NewFilerServer(defaultMux, publicVolumeMux,
 		*fo.ip, *fo.port, *fo.master, *fo.dir, *fo.collection,
 		*fo.defaultReplicaPlacement, *fo.redirectOnRead, *fo.disableDirListing,
 		*fo.confFile,
@@ -136,7 +140,22 @@ func (fo *FilerOptions) start() {
 	if e != nil {
 		glog.Fatalf("Filer listener error: %v", e)
 	}
-	if e := http.Serve(filerListener, defaultMux); e != nil {
+
+	m := cmux.New(filerListener)
+	grpcL := m.Match(cmux.HTTP2HeaderField("content-type", "application/grpc"))
+	httpL := m.Match(cmux.Any())
+
+	// Create your protocol servers.
+	grpcS := grpc.NewServer()
+	filer_pb.RegisterSeaweedFilerServer(grpcS, fs)
+	reflection.Register(grpcS)
+
+	httpS := &http.Server{Handler: defaultMux}
+
+	go grpcS.Serve(grpcL)
+	go httpS.Serve(httpL)
+
+	if err := m.Serve(); err != nil {
 		glog.Fatalf("Filer Fail to serve: %v", e)
 	}
 

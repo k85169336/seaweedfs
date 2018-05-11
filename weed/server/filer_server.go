@@ -108,7 +108,6 @@ func NewFilerServer(defaultMux, readonlyMux *http.ServeMux, ip string, port int,
 		}
 
 		defaultMux.HandleFunc("/admin/mv", fs.moveHandler)
-		defaultMux.HandleFunc("/__api__", fs.apiHandler)
 	}
 
 	defaultMux.HandleFunc("/admin/register", fs.registerHandler)
@@ -187,7 +186,7 @@ func (fs *FilerServer) detectHealthyMaster(masterNode string) (master string, e 
 }
 
 func checkMaster(masterNode string) error {
-	statUrl := "http://" + masterNode + "/stats"
+	statUrl := "http://" + masterNode + "/stats/health"
 	glog.V(4).Infof("Connecting to %s ...", statUrl)
 	_, e := util.Get(statUrl)
 	return e

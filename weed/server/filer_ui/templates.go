@@ -28,23 +28,26 @@ var StatusTpl = template.Must(template.New("status").Parse(`<!DOCTYPE html>
 				{{$path := .Path }}
 				{{ range $dirs_index, $dir := .Directories }}
 				<li>
-					<a href=		{{ print $path  $dir.Name  "/"}} >
-						{{ $dir.Name }}
+					<img src="https://www.w3.org/TR/WWWicn/folder.gif" width="20" height="23">
+					<a href={{ print $path  $dir  "/"}} >
+						{{ $dir }}
 					</a>
 				</li>
 				{{ end }}
 
 				{{ range $file_index, $file := .Files }}
 				<li>
+					<a href={{ print $path  $file.Name}} >
 					{{ $file.Name }}
+					</a>
 				</li>
 				{{ end }}
 			</ul>
 		</div>
 
-{{if .ShouldDisplayLoadMore}}
+		{{if .ShouldDisplayLoadMore}}
 		<div class="row">
-		<a href=		{{ print .Path "?limit=" .Limit	"&lastFileName=" .LastFileName}} >
+		<a href={{ print .Path "?limit=" .Limit	"&lastFileName=" .LastFileName}} >
 		Load more
 		</a>
 		</div>
