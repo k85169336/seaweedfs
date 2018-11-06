@@ -20,7 +20,6 @@ import (
 	"github.com/chrislusf/seaweedfs/weed/glog"
 	"github.com/chrislusf/seaweedfs/weed/images"
 	"github.com/chrislusf/seaweedfs/weed/operation"
-	"github.com/chrislusf/seaweedfs/weed/security"
 	"github.com/chrislusf/seaweedfs/weed/storage"
 	"github.com/chrislusf/seaweedfs/weed/util"
 )
@@ -126,13 +125,13 @@ func (vs *VolumeServer) GetOrHeadHandler(w http.ResponseWriter, r *http.Request)
 			ext = path.Ext(filename)
 		}
 	}
-	
+
 	//重命名
 	if r.FormValue("rename") != "" {
 		filename = r.FormValue("rename") + ext
 	}
 
-	if HasSuffix(filename,"_manifest") {
+	if HasSuffix(filename, "_manifest") {
 		filename = strings.TrimSuffix(filename, "_manifest")
 	}
 
@@ -187,27 +186,28 @@ func (vs *VolumeServer) GetOrHeadHandler(w http.ResponseWriter, r *http.Request)
 			if r.FormValue("r") != "" {
 				n.Data = images.Rotate(ext, n.Data, rotate)
 			}
-			reqUrl := r.Header.Get("path") + "?"
-			var reqQuery string
-			if r.FormValue("w") != "" {
-				reqQuery += "&w=" + r.FormValue("w")
-			}
-			if r.FormValue("h") != "" {
-				reqQuery += "&h=" + r.FormValue("h")
-			}
-			if r.FormValue("r") != "" {
-				reqQuery += "&r=" + r.FormValue("r")
-			}
-			if r.FormValue("w") != "" && r.FormValue("h") != "" && r.FormValue("f") != "" {
-				reqQuery += "&f=" + r.FormValue("f")
-			}
-			reqQuery = strings.TrimLeft(reqQuery, "&")
-			reqUrl += reqQuery
-			jwt := security.GetJwt(r)
-			_, err = operation.Upload("http://"+r.Host+reqUrl, filename, bytes.NewReader(n.Data), false, "image/jpeg", nil, jwt)
-			if err != nil {
-				glog.V(0).Infoln(err)
-			}
+			// reqUrl := r.Header.Get("path") + "?"
+			// var reqQuery string
+			// if r.FormValue("w") != "" {
+			// 	reqQuery += "&w=" + r.FormValue("w")
+			// }
+			// if r.FormValue("h") != "" {
+			// 	reqQuery += "&h=" + r.FormValue("h")
+			// }
+			// if r.FormValue("r") != "" {
+			// 	reqQuery += "&r=" + r.FormValue("r")
+			// }
+			// if r.FormValue("w") != "" && r.FormValue("h") != "" && r.FormValue("f") != "" {
+			// 	reqQuery += "&f=" + r.FormValue("f")
+			// }
+			// reqQuery = strings.TrimLeft(reqQuery, "&")
+			// reqUrl += reqQuery
+			// jwt := security.GetJwt(r)
+			// glog.V(0).Infoln("r.Host", r.Host)
+			// _, err = operation.Upload("http://"+r.Host+reqUrl, filename, bytes.NewReader(n.Data), false, "image/jpeg", nil, jwt)
+			// if err != nil {
+			// 	glog.V(0).Infoln(err)
+			// }
 		}
 	}
 
@@ -416,5 +416,5 @@ func (j *JsonEncode) ReturnJson() string {
 }
 
 func HasSuffix(s, suffix string) bool {
-    return len(s) >= len(suffix) && s[len(s)-len(suffix):] == suffix
+	return len(s) >= len(suffix) && s[len(s)-len(suffix):] == suffix
 }

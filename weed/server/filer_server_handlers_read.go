@@ -1,7 +1,9 @@
 package weed_server
 
 import (
+	"bytes"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -11,6 +13,7 @@ import (
 	"github.com/chrislusf/seaweedfs/weed/filer"
 	"github.com/chrislusf/seaweedfs/weed/glog"
 	"github.com/chrislusf/seaweedfs/weed/operation"
+	"github.com/chrislusf/seaweedfs/weed/security"
 	ui "github.com/chrislusf/seaweedfs/weed/server/filer_ui"
 	"github.com/chrislusf/seaweedfs/weed/util"
 	"github.com/syndtr/goleveldb/leveldb"
@@ -101,16 +104,25 @@ func (fs *FilerServer) GetOrHeadHandler(w http.ResponseWriter, r *http.Request, 
 	fileId, err := fs.filer.FindFile(r.URL.Path)
 	if err == filer.ErrNotFound {
 		if fs.syncFile != "" {
-			tmpFile, _, _, err := util.SyncDownload(fs.syncFile + r.URL.Path)
+			// data, fileName, contentType, err := util.Download(fs.syncFile + r.URL.Path)
+			tmpFile, fileName, contentType, err := util.NewDownload(fs.syncFile + r.URL.Path)
 			if err != nil {
 				glog.V(0).Infoln(r.URL.Path, err)
 				w.WriteHeader(http.StatusNotFound)
+				os.Remove(tmpFile)
 				return
 			}
-			//暂用curl上传
-			err = util.CurlPost(tmpFile,"http://"+r.Host+r.URL.Path)
+			data, err := ioutil.ReadFile(tmpFile)
 			if err != nil {
-				glog.V(0).Infoln("CurlPost", err)
+				glog.V(0).Infoln(r.URL.Path, err)
+				w.WriteHeader(http.StatusNotFound)
+				os.Remove(tmpFile)
+				return
+			}
+			jwt := security.GetJwt(r)
+			_, err = operation.Upload("http://"+fs.port+r.URL.Path, fileName, bytes.NewReader(data), false, contentType, nil, jwt)
+			if err != nil {
+				glog.V(0).Infoln("upload", err)
 				w.WriteHeader(http.StatusNotFound)
 				os.Remove(tmpFile)
 				return

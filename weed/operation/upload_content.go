@@ -74,7 +74,6 @@ func upload_content(uploadUrl string, fillBufferFunction func(w io.Writer) error
 		glog.V(0).Infoln("error closing body", err)
 		return nil, err
 	}
-
 	req, postErr := http.NewRequest("POST", uploadUrl, body_buf)
 	if postErr != nil {
 		glog.V(0).Infoln("failing to upload to", uploadUrl, postErr.Error())
