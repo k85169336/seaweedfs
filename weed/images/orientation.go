@@ -30,23 +30,23 @@ func FixJpgOrientation(data []byte) (oriented []byte) {
 	case topLeftSide:
 		// do nothing
 		return data
-	case topRightSide:
+	case topRightSide: //flip horizontal
 		flipMode = 2
 	case bottomRightSide:
 		angle = 180
-	case bottomLeftSide:
-		angle = 180
-		flipMode = 2
-	case leftSideTop:
+	case bottomLeftSide: //flip vertical
+		// angle = 180
+		flipMode = 1
+	case leftSideTop: //transpose
 		angle = -90
-		flipMode = 2
+		flipMode = 1
 	case rightSideTop:
-		angle = -90
-	case rightSideBottom:
 		angle = 90
+	case rightSideBottom: //transverse
+		angle = -90
 		flipMode = 2
 	case leftSideBottom:
-		angle = 90
+		angle = -90
 	}
 
 	if srcImage, _, err := image.Decode(bytes.NewReader(data)); err == nil {
